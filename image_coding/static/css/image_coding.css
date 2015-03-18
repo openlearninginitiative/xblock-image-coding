@@ -1,0 +1,36 @@
+.image_coding .question_prompt {
+  text-align: left;
+  padding-bottom: 10px;
+}
+
+.image_coding .hint {
+  text-align: left;
+}
+
+.image_coding .correct_feedback {
+  padding-bottom: 10px;
+}
+
+.image_coding .run_button {
+	height: 40px;
+	vertical-align: middle;
+	font-weight: 600;
+}
+
+.image_coding .reset_button {
+	height: 40px;
+	vertical-align: middle;
+	font-weight: 600;
+}
+
+.image_coding .hint_button {
+	height: 40px;
+	vertical-align: middle;
+	font-weight: 600;
+}
+
+.image_coding .submit_button {
+	height: 40px;
+	vertical-align: middle;
+	font-weight: 600;
+}
