@@ -2,35 +2,58 @@
 
 <div class="wrapper-comp-settings editor-with-buttons is-active" id="settings-tab">
     <ul class="list-input settings-list">
-        
-         <li class="field comp-setting-entry is-set">
-            <div class="wrapper-comp-setting">
-                <label class="label setting-label" for="image_coding_edit_display_name">Display Name</label>
-                <input class="input setting-input" id="image_coding_edit_display_name" value="{{ display_name }}" type="text">
-            </div>
-            <span class="tip setting-help">This name appears in the horizontal navigation at the top of the page</span>
-        </li>
-        
-         <li class="field comp-setting-entry is-set">
-            <div class="wrapper-comp-setting">
-                <label class="label setting-label" for="image_coding_edit_solution">Solution</label>
-                <input class="input setting-input" id="image_coding_edit_solution" value="{{ solution }}" type="text">
-            </div>
-            <span class="tip setting-help">This is the solution to the question</span>
-        </li>
-        
+
+     <li class="field comp-setting-entry is-set">
+        <div class="wrapper-comp-setting">
+            <label class="label setting-label" for="edit_display_name">Display Name</label>
+            <input class="input setting-input" id="edit_display_name" value="{{ self.display_name }}" type="text">
+        </div>
+    </li>
+
+    <li class="field comp-setting-entry is-set">
+      <div class="wrapper-comp-setting">
+        <label class="label setting-label" for="edit_body">Question Body</label>
+        <textarea rows="8" cols="60" id="edit_body">{{ self.body }}</textarea>
+      </div>
+    </li>
+
       <li class="field comp-setting-entry is-set">
           <div class="wrapper-comp-setting">
-            <label class="label setting-label" for="edit_data">Definition</label>
-            <span class="tip setting-help">The XML definition for the question and expert answer</span>
-            <div class='codemirror-editor-wrapper'>
-              <textarea class="block-xml-editor edit-data">{{ xml_data }}</textarea>
-            </div>
+            <label class="label setting-label" for="edit_solution_code">Solution Code</label>
+            <textarea rows="10" cols="60" id="edit_solution_code">{{ self.solution_code }}</textarea>
           </div>
       </li>
 
+      <li class="field comp-setting-entry is-set">
+          <div class="wrapper-comp-setting">
+            <label class="label setting-label" for="edit_starter_code">Starter Code</label>
+            <textarea rows="10" cols="60" id="edit_starter_code">{{ self.starter_code }}</textarea>
+          </div>
+      </li>  
+
+     <li class="field comp-setting-entry is-set">
+        <div class="wrapper-comp-setting">
+            <label class="label setting-label" for="edit_hints">Hints One Per Line</label>
+            <textarea rows="2" cols="60" id="edit_hints">{{ self.hints }}</textarea>
+        </div>
+    </li>
+
+     <li class="field comp-setting-entry is-set">
+        <div class="wrapper-comp-setting">
+            <label class="label setting-label" for="edit_regex">Grading Regex</label>
+            <input class="input setting-input" id="edit_regex" value="{{ self.regex }}" type="text">
+        </div>
+    </li>
+
+     <li class="field comp-setting-entry is-set">
+        <div class="wrapper-comp-setting">
+            <label class="label setting-label" for="edit_tolerance">Grading Tolerance</label>
+            <input class="input setting-input" id="edit_tolerance" value="{{ self.tolerance }}" type="text">
+        </div>
+    </li>
+
     </ul>
-    
+
     <div class="xblock-actions">
         <ul>
             <li class="action-item">
@@ -41,6 +64,28 @@
             </li>
         </ul>
     </div>
+
+<!--
+Here is an example setting
+<li class="field comp-setting-entry is-set">
+<div class="wrapper-comp-setting">
+<label class="label setting-label" for="edit_max_score">Max Score</label>
+<input class="input setting-input edit-max-score" id="edit_max_score" value="{{ self.weight }}" type="text">
 </div>
+<span class="tip setting-help">The maximum number of points awarded to this problem</span>
+</li>
 
+TextArea example
+<li class="field comp-setting-entry is-set">
+<div class="wrapper-comp-setting">
+<label class="label setting-label" for="edit_data">Definition</label>
+<span class="tip setting-help">The XML definition for the Drag and Drop</span>
+<div class='codemirror-editor-wrapper'>
+<textarea class="block-xml-editor edit-data">{{ self.data }}</textarea>
+</div>
+</div>
+</li>
+rows="10" cols="50" 
+--->
 
+</div>

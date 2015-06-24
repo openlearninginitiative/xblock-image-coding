@@ -1,23 +1,24 @@
 <div class='image_coding'>
-	<h2>{display_name}</h2>
-
-	<div class='question_prompt'>{prompt}</div>
+	<h2>{self.display_name}</h2>
+	<div class='question_prompt'>{self.body}</div>
 
 	<div class="runparent">
-	<!-- CODE -->
+	<!-- CODE class="tacode" -->
 	<div class="runcode">
-	<textarea class="answer" id="jsinputid" rows="12" cols="70"  class="tacode" spellcheck="false" style='min-height:15em;' meh='{solution}'   
-onKeyPress='return handleCR(this ,event)'>{student_answer}</textarea>
+	<textarea class="student_code"  id="{unique_id}" rows="12" cols="70" spellcheck="false" style='min-height:15em;' meh='{solution_encoded}'   
+onKeyPress='return handleCR(this ,event)' re='{regex_encoded}'>{self.student_code}</textarea>
 	</div>
 	<div style='padding-top:10px'>
 			<input 
 			class='run_button' 
 			type='button' 
-			value='Run'></input>
+			value='Run'
+			></input>
+			<!-- onclick="var stupid=$(this).parent().parent().find('.student_code')[0].id; xblock_run(stupid);" -->
 	</div>
 	<!-- OUTPUT -->
-	<div id="jsinputid-output" style='padding-top:20px' class="runout"></div>
-		<p>When you're happy with your code, click the "Submit" button to see if you're right.</p>
+	<div id="{unique_id}-output" style='padding-top:20px' class="runout"></div>
+		<p>When the output is correct, click Submit to check it</p>
 	</div>
 	<div class='unanswered' style='display:block'>
 		<img src='{unanswered_icon_url}'/>
@@ -31,7 +32,7 @@ onKeyPress='return handleCR(this ,event)'>{student_answer}</textarea>
 	<div class='correct_feedback' style='display:none'>
 		<p style='color:green'>Good job!</p>
 	</div>
-	<div class='hint' style='display:none'>{{hint}}</div>
+	<div class='hint' style='display:none'></div>
 	<div class='button_holder' style='padding-top:10px'>
 		<div style='display:inline'>
 			<input 
@@ -39,17 +40,11 @@ onKeyPress='return handleCR(this ,event)'>{student_answer}</textarea>
 			type='button' 
 			value='Submit'></input>
 		</div>
-		<div class='hint_button_holder' style='display:inline'>
+		<div class='hint_button_holder' style='{hint_button_css}'>
 			<input 
 			class='hint_button' 
 			type='button' 
 			value='Hint'></input>
-		</div>
-		<div style='display:inline'>
-			<input 
-			class='reset_button' 
-			type='button' 
-			value='Reset'></input>
 		</div>
 	</div>
 

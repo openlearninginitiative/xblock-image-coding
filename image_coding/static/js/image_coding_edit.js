@@ -1,8 +1,8 @@
 /* Javascript for Image Coding XBlock. */
 function ImageCodingXBlockInitEdit(runtime, element) {
 
-    var xmlEditorTextarea = $('.block-xml-editor', element),
-        xmlEditor = CodeMirror.fromTextArea(xmlEditorTextarea[0], { mode: 'xml', lineWrapping: true });
+    //var xmlEditorTextarea = $('.block-xml-editor', element),
+    //    xmlEditor = CodeMirror.fromTextArea(xmlEditorTextarea[0], { mode: 'xml', lineWrapping: true });
 
     $(element).find('.action-cancel').bind('click', function() {
         runtime.notify('cancel', {});
@@ -10,10 +10,15 @@ function ImageCodingXBlockInitEdit(runtime, element) {
 
     $(element).find('.action-save').bind('click', function() {
         var data = {
-            'display_name': $('#image_coding_edit_display_name').val(),
-            'solution': $('#image_coding_edit_solution').val(),
-            'data': xmlEditor.getValue(),
+            'display_name': $('#edit_display_name').val(),
+            'body': $('#edit_body').val(),
+            'solution_code': $('#edit_solution_code').val(),
+            'starter_code': $('#edit_starter_code').val(),
+            'regex': $('#edit_regex').val(),
+            'tolerance': $('#edit_tolerance').val(),
+            'hints': $('#edit_hints').val()
         };
+        console.log('SAVE:' + data);
         
         runtime.notify('save', {state: 'start'});
         

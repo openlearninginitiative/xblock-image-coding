@@ -16,7 +16,7 @@ def package_data(pkg, root):
 
 setup(
     name='xblock-image-coding',
-    version='0.1',
+    version='0.3',
     description='Image Coding XBlock',
     packages=[
         'image_coding',

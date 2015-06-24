@@ -308,29 +308,37 @@ function evaluateClearSoln(id) {
 // TODO: rationalize this vs. jsinput_getgrade
 function evaluateGrade(id, localtest) {
   // Check for re attribute - regex grading
+  //debugger
   var ta = document.getElementById(id);
   var re = ta.getAttribute('re');
   if (re) {
     // pre-flight for the re grading case
     if (!window.globalPrintText) {
+      console.log('REGEX NOTREADY')
+      return 'notready';  // OLI return token value for the 'output not there case', used by OLI upstream
       // print may not work, since there's not runid going, so alert()
-      if (localtest) alert("error: no printout to grade");
-      else throw {"name": "Waitfor Exception", "message":"Nothing to grade. Run and print before grading."};
-      return false;
+      //if (localtest) alert("error: no printout to grade");
+      //else throw {"name": "Waitfor Exception", "message":"Nothing to grade. Run and print before grading."};
+      //return false;
     }
+
     
-    re = unescape(re.replace(new RegExp('\\\\', 'g'), '%'))
+    console.log('RE1:' + re);
+    re = unescape(re.replace(new RegExp('\\\\', 'g'), '%'));
+    console.log('RE2:' + re);
     var regex = new RegExp(re, "g");
     var grade = window.globalPrintText.search(regex) > -1;
+    console.log(window.globalPrintText + ' GRADE:' + grade);
     if (localtest) print("grade:" + grade);
     return(grade);
   }
 
   // pre-flight for the image-grading case
   if (!window.globalLastCanvas) {
-    if (localtest) alert("Run to produce an image before grading");
+    return 'notready';      // OLI
+    //if (localtest) alert("Run to produce an image before grading");
     // This special exception form works with the JSInput layer
-    else throw {"name": "Waitfor Exception", "message":"No image to grade. Run to produce an image before grading."};
+    //else throw {"name": "Waitfor Exception", "message":"No image to grade. Run to produce an image before grading."};
   }
   
   window.globalRunId = id;  // hack: set state used by printing
@@ -462,6 +470,7 @@ function restoreParent(id) {
 // Computes and returns the image diff, or 999 for error.
 // todo: structure error cases better.
 function gradering() {
+  //debugger
   var studentCanvas = window.globalLastCanvas;
   if (!studentCanvas) {
     print("error: no student canvas");
@@ -1618,5 +1627,9 @@ function refAvg(name) {
 //window.globalPathPrefix = "/c4x/Engineering/CS101/asset/";
 //window.globalPathPrefix = "/c4x/NickX/CSTEST101/asset/";
 //window.globalPathPrefix = "/c4x/Strader/101/asset/";
+//window.globalPathPrefix = "/c4x/edX/DemoX/asset/";
 
+// OLI - 'notready' return cases for grading, see 'OLI' above
+// OLI mod - TODO need a better way to manage this
+window.globalPathPrefix = "/c4x/meh/CS67/asset/";
 
