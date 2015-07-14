@@ -2,17 +2,28 @@
 
 """
 Things TBD
--log syntax errors on Run button
--Think about how we prompt students who click Submit but not Run
+-Make two types of problem on a page co-exist (.js unify)
+-Starter code should work (get on blank)
 -Think about showing the green/red correctly when they reload/revisit a prob
+
+-log works
+-clear on type
+-code cleanup / document
+-Run button should grade/log on the DL .. integrate with .js
+
+
+-Could adopt xml-style coding of everything vs. research how to add vars to xblock
+-That's how course triple should work
+-Think about how we prompt students who click Submit but not Run
+-Log syntax errors on Run button
+-Log on Run not just submit
 -When they click Run again .. maybe blank out the red/green marking?
 -Maybe fiddle with font/layout, use monospace
- -The text area should definitely be resizeable
+-The text area should definitely be resizeable
 
 Maybe:
 -Rename to be more generic
 -Could permit the .js includes to be static resources vs. putting them in here: easier rev
- -e.g. that's how course triple should work
 """
 
 
@@ -63,10 +74,10 @@ class ImageCodingXBlock(XBlock):
         help='The student authored code',
     )
 
-    stored_success = Boolean(
-        default=False, 
+    stored_correctness = String(
+        default='', 
         scope=Scope.user_state,
-        help='Cache question success state, so UI looks right'
+        help='Cache correct/incorrect/unanswered'
     )
 
     tolerance = String(
@@ -99,8 +110,8 @@ class ImageCodingXBlock(XBlock):
 
     def student_view(self, context=None):
         """Student view of the problem, complete with Run button and grading"""
-        ##import pdb
-        ##pdb.set_trace()
+        #import pdb
+        #pdb.set_trace()
         
         correct_icon_url = self.runtime.local_resource_url(self, 'public/images/correct-icon.png')
         incorrect_icon_url = self.runtime.local_resource_url(self, 'public/images/incorrect-icon.png')
@@ -122,6 +133,8 @@ class ImageCodingXBlock(XBlock):
         if self.hints:
             hint_button_css = 'display:inline'
         frag = Fragment(html.format(self=self,
+                                    stored_correctness=self.stored_correctness,
+                                    student_code=student_code,  # NOT just on self.xxx
                                     hint_button_css=hint_button_css,
                                     solution_encoded=urllib.quote(self.solution_code).replace('%', '\\'),
                                     regex_encoded=urllib.quote(self.regex).replace('%', '\\'),
@@ -129,11 +142,12 @@ class ImageCodingXBlock(XBlock):
                                     correct_icon_url=correct_icon_url,
                                     incorrect_icon_url=incorrect_icon_url,
                                     unanswered_icon_url=unanswered_icon_url
-                                    ))
+                                    )) 
         frag.add_css(self.resource_string('static/css/image_coding.css'))
         frag.add_javascript(self.resource_string('static/js/image_coding_view.js'))
-        frag.add_javascript(self.resource_string('static/js/image_coding-edx.js'))
-        frag.add_javascript(self.resource_string('static/js/image_coding-table-edx.js'))
+        # Note: the html includes the regular /static/xxx .js files itself, so we don't host
+        # our own copy in the xblock
+        # TODO: could have an "include" section XBlock to paste anything into the template
         frag.initialize_js('ImageCodingXBlockInitView')
         return frag
 
@@ -147,29 +161,35 @@ class ImageCodingXBlock(XBlock):
         #pdb.set_trace()
         self.student_code = submissions['student_code']
         # the client side javascript creates 'correct'
-        is_correct = submissions['correct']  # This is JSONd to a python value
-        print 'STORED:', self.stored_success
+        is_correct = bool(submissions['report']['grade'])  # This is JSONd to a python value
         if is_correct:
             score = 1
             success = 'success'
-            self.stored_success = True
+            self.stored_correctness = 'correct'
         else:
             score = 0
             success = 'failure'
-            self.stored_success = False
-        print 'STORED:', self.stored_success
-        
+            self.stored_correctness = 'incorrect'
+
         # publish a grading event when student completes this exercise
         # NOTE, we don't support partial credit
         try:
-            print 'MEH publish score', score
             self.runtime.publish(self, 'grade', {'value': score, 'max_value': 1})
-            print 'MEH done score', score
         except NotImplementedError:
             # TODO: maybe now this is implemented in studio
             pass
-            
+
+        ## print 'SUB EVENT', submissions
+        event_info = dict()
+        event_info['module_id'] = self.location.to_deprecated_string()
+        event_info['report'] = submissions['report']
+        event_info['student_code'] = submissions['student_code']
+        # TODO: this event name should be something
+        self.runtime.track_function('oli.image_coding.submit_event', event_info)
+
+
         # Return our JSON
+        # TODO maybe this could return a boolean
         msg = '-the message-'
         return {
           'result': success, 'msg': msg
@@ -206,7 +226,7 @@ class ImageCodingXBlock(XBlock):
 
 
     @XBlock.json_handler
-    def get_hint(self, submissions, suffix=''):
+    def handle_hint(self, submissions, suffix=''):
         """Given index, return the hint and its index. Mod around if necessary."""
         import pdb
         #pdb.set_trace()
@@ -230,6 +250,23 @@ class ImageCodingXBlock(XBlock):
             'hint_index': hint_index
         }
 
+    @XBlock.json_handler
+    def handle_reset(self, submissions, suffix=''):
+        """Return starter code for the reset button"""
+        event_info = dict()
+        event_info['module_id'] = self.location.to_deprecated_string()
+        event_info['starter_code'] = self.starter_code
+        # TODO: this event name should be something
+        self.runtime.track_function('oli.image_coding.reset_code', event_info)
+
+        return {
+            'result': 'success',
+            'starter_code': self.starter_code
+        }
+
+
+
+
     '''
     Util functions
     '''
@@ -240,7 +277,7 @@ class ImageCodingXBlock(XBlock):
         except AttributeError:
             # workaround for xblock workbench
             unique_id = self.parent.replace('.', '-')
-        return 'nick_' + unique_id
+        return 'IC_' + unique_id
 
     def load_resource(self, resource_path):
         '''
@@ -261,47 +298,18 @@ class ImageCodingXBlock(XBlock):
         data = pkg_resources.resource_string(__name__, path)
         return data.decode('utf8')
 
-#     def _get_body(self, xmlstring):
-#         '''
-#         Helper method
-#         '''
-#         tree = etree.parse(StringIO(xmlstring))
-#         body = tree.xpath('/image_coding/body')
-#         
-#         return etree.tostring(body[0], encoding='unicode')
+    @XBlock.json_handler
+    def publish_event(self, data, suffix=''):
+        # JS side: {'mode':'run', 'report':report, 'student_code':code};
+        ## print 'PUB EVENT', data
+        event_info = dict()
+        event_info['module_id'] = self.location.to_deprecated_string()
+        event_info['mode'] = data['mode']
+        event_info['report'] = data['report']
+        event_info['student_code'] = data['student_code']
+        # TODO: this event name should be something
+        self.runtime.track_function('oli.image_coding.run_event', event_info)
 
-# 
-# 		tree = etree.parse(StringIO(self.question_string))
-# 		raw_hints = tree.xpath('/image_coding/demandhint/hint')
-# 		
-# 		decorated_hints = list()
-# 		
-# 		if len(raw_hints) == 1:
-# 			hint = 'Hint: ' + etree.tostring(raw_hints[0], encoding='unicode')
-# 			decorated_hints.append(hint)
-# 		else:
-# 			for i in range(len(raw_hints)):
-# 				hint = 'Hint (' + str(i+1) + ' of ' + str(len(raw_hints)) + '): ' + etree.tostring(raw_hints[i], encoding='unicode')
-# 				decorated_hints.append(hint)
-# 		
-# 		hints = decorated_hints	
-# 
-# 		return {
-# 			'result': 'success',
-# 			'hints': hints,
-# 		}
-
-#     @XBlock.json_handler
-#     def publish_event(self, data, suffix=''):
-#         try:
-#             event_type = data.pop('event_type')
-#         except KeyError:
-#             return {'result': 'error', 'message': 'Missing event_type in JSON data'}
-# 
-#         data['user_id'] = self.scope_ids.user_id
-#         data['component_id'] = self._get_unique_id()
-#         self.runtime.publish(self, event_type, data)
-# 
-#         return {'result': 'success'}
+        return {'result': 'success'}
 
 

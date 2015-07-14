@@ -1,11 +1,13 @@
 /* Javascript for cs101XBlock. */
 function ImageCodingXBlockInitView(runtime, element) {
-    var handlerUrl = runtime.handlerUrl(element, 'student_submit');
-    var hintUrl = runtime.handlerUrl(element, 'get_hint');
-	var publishUrl = runtime.handlerUrl(element, 'publish_event');
+    var submitUrl = runtime.handlerUrl(element, 'student_submit');
+    var hintUrl = runtime.handlerUrl(element, 'handle_hint');
+    var resetUrl = runtime.handlerUrl(element, 'handle_reset');
+    var publishUrl = runtime.handlerUrl(element, 'publish_event');
+    window.globalpublishurl = publishUrl;
 
-	var $element = $(element);
-	
+    var $element = $(element);
+
     var submit_button = $element.find('.submit_button');
     var hint_button = $element.find('hint_button');
     var reset_button = $element.find('.reset_button');
@@ -18,22 +20,13 @@ function ImageCodingXBlockInitView(runtime, element) {
 
     var hint_div = $element.find('.hint');
 
-	var hint_counter = 0;
+    var hint_counter = 0;
     var student_code = "";
+    var studentarea = $element.find('.student_code')[0];
     
-	//var ta = document.getElementById('jsinputid');
-	//var initial_code = ta.value;
-
     var hint;
     var hints;
     var hint_counter = 0;
-	
-    //$.ajax({
-    //    type: 'POST',
-    //    url: hintUrl,
-    //    data: JSON.stringify({requested: true}),
-    //    success: set_hints
-    //});
 
     function publish_event(data) {
       $.ajax({
@@ -43,134 +36,85 @@ function ImageCodingXBlockInitView(runtime, element) {
       });
     }
 
-	function post_submit(result) {
-	}
-	
-	function set_hint(result) {
-	    console.log('set_hint:' + result);
-	    //hint_button.css('display','inline');
-		//hint_button_holder.css('display','inline');
-		hint_div.css('display','inline');
-		hint_div.html(result.hint);
-		hint_div.attr('hint_index', result.hint_index);
-	}
 
-	function show_unanswered() {
-		console.log('show_unanswered');
-		unanswered.css('display','block');
-		correct.css('display','none');
-		incorrect.css('display','none');
-		correct_feedback.css('display','none');
-	}
-
-	function show_correct() {
-		console.log('show_correct');
-		unanswered.css('display','none');
-		correct.css('display','block');
-		incorrect.css('display','none');
-		correct_feedback.css('display','block');
-	}
-
-	function show_incorrect() {
-		console.log('show_incorrect');
-		unanswered.css('display','none');
-		correct.css('display','none');
-		incorrect.css('display','block');
-		correct_feedback.css('display','none');
-	}
-
-    function reset_answer() {
-		hint_div.css('display','none');
-		show_unanswered();
-		try {
-			clearOutput();
-		}
-		catch (e) {
-		}
-		var ta = document.getElementById('jsinputid');
-		ta.value = initial_code;
+    // AJAX callback to set hint
+    function set_hint(result) {
+        hint_div.css('display','inline');
+        hint_div.html(result.hint);
+        hint_div.attr('hint_index', result.hint_index);
     }
 
-    function reset_hint() {
-        return;
-    	hint_counter = 0;
-    	hint_div.css('display','none');
+    // AJAX callback to do "reset" of starter code
+    function set_reset(result) {
+        show_correctness('unanswered');
+        $('.student_code',element).val(result.starter_code);
     }
 
-    function show_hint() {
-        return;
-    	hint = hints[hint_counter];
-		hint_div.html(hint);
-		hint_div.css('display','block');
-		publish_event({
-			event_type:'hint_button',
-			next_hint_index: hint_counter,
-		});
-		if (hint_counter == (hints.length - 1)) {
-			hint_counter = 0;
-		} else {
-			hint_counter++;
-		}
+    // Change the red/green grading state css: correct, incorrect, unanswered
+    function show_correctness(state) {
+      correct.css('display', 'none');
+      incorrect.css('display', 'none');
+      unanswered.css('display', 'none');
+ 
+      if (state == 'correct') correct.css('display', 'block');
+      else if (state == 'incorrect') incorrect.css('display', 'block');
+      else unanswered.css('display', 'block');
     }
 
+    // Does nothing
+    function post_submit(result) {
+    }
+
+    
     $('.submit_button', element).click(function(eventObject) {
-        var correct = false;
-  		try {
-  		    //debugger
-  		    // TODO: seems like it should be possible to store the id in the this rather than the following
-  		    var id = $(this).parent().parent().parent().find('.student_code')[0].id;
-  			correct = evaluateGrade(id);
-  		}
-  		catch (e) {
-  		    console.log('ERROR is submit grading:' + e);
-  		}
-  		console.log('correctness in submit:' + correct);
-  		
-  		
-  		correct_bool = (correct && correct != 'notready');  // can be "notready"
-  		
+        // First run the grading
+        var report = null;
+        try {  // TODO evaluateGrade should not throw normally now
+            var id = $(this).parent().parent().parent().find('.student_code')[0].id;
+            report = evaluateGradeOLI(id);
+        }
+        catch (e) {
+            if (window.console) console.log('ERROR is submit grading:' + e);
+            report = {'error': 'internal-error:' + e, 'grade':''};
+        }
+
         // We AJAX save both their data and the correctness
         $.ajax({
             type: 'POST',
-            url: handlerUrl,
-            data: JSON.stringify({'student_code': $('.student_code',element).val(), 'correct': correct_bool }),
+            url: submitUrl,
+            data: JSON.stringify({'student_code': $('.student_code',element).val(), 'report': report }),
             success: post_submit
         });
-        
-        if (correct == 'notready') {
+
+        if (report['error'] == 'notready') {
             alert('Please Run first to produce output, then try Submit');
         }
 
-  		// Now update the UI .. this should always be in sync with what we stored
-  		// TODO: could store persistently the correctness, so it looks right when they come back .. probably what
+        correct_bool = (report['grade'] != undefined && report['grade']);  // bool for UI purposes
         if (correct_bool) {
-        	show_correct();
+            show_correctness('correct');
         } else {
-        	show_incorrect();
+            show_correctness('incorrect');
         }
-	});
-	
+    });
+
+
+    // Detect key presses, so we can blank out the grading when they start editing
+    $('.student_code', element).keypress(function(event) {
+        show_correctness('');
+        return handleCR(studentarea, event);
+    });
+    $('.student_code', element).keydown(function(event) {  // need this one just for del key
+        if (event.keyCode == 8) show_correctness('');
+    });
 
     $('.run_button', element).click(function(eventObject) {
         // "this" is the input element, so we jquery from there to find the correct textarea
         var id = $(this).parent().parent().find('.student_code')[0].id;
-  		evaluateClear(id);
-  		
-  		// TODO: not set up to do this on the main thread
-  		// solution: provide fn pointer to evaluate clear, it calls that
-  		/*
-		var ta = document.getElementById(id);
-		var text = ta.value;
-  		var grade = evaluateGrade(id);
-  		console.log('grade in run:' + grade);
-  		*/
+        evaluateClearOLI(id);
+    });
 
-// 		publish_event({
-// 			event_type:'run_button',
-// 			student_code: text,
-// 		});
-	});
-
+    // Implement hint-click: message the server to get each hint
     $('.hint_button', element).click(function(eventObject) {
         var next_index, hint_index = hint_div.attr('hint_index');
         if (hint_index == undefined) {
@@ -185,21 +129,194 @@ function ImageCodingXBlockInitView(runtime, element) {
         data: JSON.stringify({'hint_index': next_index}),
         success: set_hint
         });
-	});
+    });
 
-//         $.ajax({
-//             type: 'POST',
-//             url: handlerUrl,
-//             data: JSON.stringify({'student_code': $('.student_code',element).val(), 'correct': correct_bool }),
-//             success: post_submit
-//         });
-//         data: JSON.stringify({requested: true}),
+    $('.reset_button', element).click(function(eventObject) {
+        $.ajax({
+        type: 'POST',
+        url: resetUrl,
+        data: JSON.stringify({'hint_index': 0}),
+        success: set_reset
+        });
+    });
+    
 
-    //$('.reset_button', element).click(function(eventObject) {
-    //    reset_answer();
-	//});
-	
- 
+    // Startup logic
+    show_correctness(submit_button.attr('stored_correctness'));
+
 }
 
 
+
+// CS101 - OLI layer
+
+// Versions for OLI, these all go together, replacing the top level functions in cs101-edx.js
+// but using the lower level stuff.
+
+
+// Top level -- call this to blank out and eval a problem.
+// Called by the Run button
+function evaluateClearOLI(id) {
+  //store(id);
+  
+  window.globalRunId = id;  // hack: set state used by printing
+  window.globalLastCanvas = null;  // regular canvas
+  window.globalLastCanvas2 = null;  // soln canvas
+  window.globalSolnName = null;  // this is maybe not used
+  window.globalSolnRun = false;  // marker of regular/soln run
+  window.globalPrintText = "";
+  window.globalImageLoadError = null;  // OLI
+
+  clearOutput();
+  
+  var ta = document.getElementById(id);
+  var text = ta.value;
+  var images = extractImages(text);
+  
+  window.globalImageNeeded = images.length;
+  window.globalImageCount = 0;
+  window.globalImageFn = function() { evaluateShowOLI(id); };
+  
+  setTimeout(function() { preloadImages(images); }, 100);
+}
+
+// Called after image load to run student code
+// After student run, we silently call grading to log where they are
+function evaluateShowOLI(inID) {
+  // This is stock
+  var logMsg = '';
+  var ta = document.getElementById(inID);
+  
+  if (window.globalImageLoadError) {  // OLI sort of error, pre-evaluation
+      logMsg = '<font color=red>' + window.globalImageLoadError + '</font>';
+      print(logMsg);
+  }  
+  else try {
+    var e = evaluate(inID);
+    if (e != null) {
+      logMsg = e.message;
+      var msg = "<font color=red>Error:</font>" + e.message;  // 2012-2 don't make the whole thing red
+      if (e.userLine) msg += " line:" + e.userLine;
+      print(msg);
+      if (e.userLine) {
+        logMsg += " line:" + e.userLine;
+        
+        selectLine(ta, e.userLine);
+      }
+    }
+  }
+  catch (e) {
+    alert("Low level evaluation error:" + e);
+  }
+  
+  if (logMsg) {
+    runReport({'error':logMsg, 'grade':''}, ta.value);
+  }
+  else {
+    // OLI add - run this from event loop
+    setTimeout(function() { postRunOLI(inID, ta.value); }, 10);
+  }
+}
+
+
+// Log report data to the server for "run" case
+function runReport(report, code) {
+  var log = {'mode':'run', 'report':report, 'student_code':code};
+  $.ajax({
+    type: "POST",
+    url: window.globalpublishurl,  // TODO hack smuggling this url out .. could move into the block above
+    data: JSON.stringify(log)
+  });
+}
+
+
+// Run the grade layer and log results
+function postRunOLI(id, code) {
+  var report = evaluateGradeOLI(id);
+  runReport(report, code);
+}
+
+
+// OLI variant, no localtest arg
+// Lowest level run/grader, uses previous student run state
+// return dict with both {'error': xx, 'grade': xx } and one of xx will be blank
+function evaluateGradeOLI(id) {
+  // Check for re attribute - regex grading
+  var ta = document.getElementById(id);
+  var re = ta.getAttribute('re');
+  if (re) {
+    if (!window.globalPrintText) {
+      return({'error': 'notready', 'grade':''});
+    }
+    
+    re = unescape(re.replace(new RegExp('\\\\', 'g'), '%'))
+    var regex = new RegExp(re, "g");
+    var grade = window.globalPrintText.search(regex) > -1;
+    return ({'error':'', 'grade':grade});
+  }
+
+  // pre-flight for the image-grading case
+  if (!window.globalLastCanvas) {
+    return ({'error': 'notready', 'grade':''});
+  }
+  
+  window.globalRunId = id;  // hack: set state used by printing
+  window.globalPrintCount = 5000;
+  
+  // soln specific
+  window.globalLastCanvas2 = null;  // soln canvas (clear this, but not student canvas)
+  window.globalSolnRun = true;  // mark that this is the soln run
+    
+
+  var text = getSolnText(id);
+  
+  // Issue: what if the soln code and the student code use different images?
+  // Simple: we check that all the solution images are in cache, fail if not
+  var images = extractImages(text);
+  var imageErr = null;
+  for (var i=0; i<images.length; i++) {
+    if (!getImageBySrc(images[i])) {
+      return({'error': 'soln-image-not-loaded', 'grade': ''});
+    }
+  }
+  try {
+    eval(text);
+  }
+  catch(e) {
+    if (window.console) console.log('soln-eval-error:' + e);
+    return ({'error': 'soln-eval-error', 'grade':''});
+  }
+
+  var diff = graderingOLI();
+  
+  if (diff == 'error') {
+    return {'error': 'image-diff-error', 'grade':''};
+  }
+  
+  var tol = ta.getAttribute('tol');
+  if (!tol) tol = 1.0;
+  var grade = (diff <= tol);
+  return {'error':'', 'grade':grade};
+}
+
+
+// Computes and returns the image diff number, or 'error' for error.
+function graderingOLI() {
+  var studentCanvas = window.globalLastCanvas;
+  if (!studentCanvas) {
+    return('error');
+  }
+  
+  var solnCanvas = window.globalLastCanvas2;
+  if (!solnCanvas) {
+    return('error');
+  }
+    
+  var studentData = studentCanvas.getContext("2d")
+      .getImageData(0, 0, studentCanvas.width, studentCanvas.height).data;
+
+  var solnData = solnCanvas.getContext("2d")
+      .getImageData(0, 0, solnCanvas.width, solnCanvas.height).data;
+      
+  return(imageDiff(studentData, solnData));
+}

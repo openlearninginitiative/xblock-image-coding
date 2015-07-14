@@ -1,13 +1,15 @@
 <div class='image_coding'>
+    <script src="/static/cs101-edx.js"></script>
+    <!-- <script src="/static/cs101-table-edx.js"></script> TODO -->
+
 	<h2>{self.display_name}</h2>
 	<div class='question_prompt'>{self.body}</div>
-
 	<div class="runparent">
 	<!-- CODE class="tacode" -->
 	<div class="runcode">
 	<textarea class="student_code"  id="{unique_id}" rows="12" cols="70" spellcheck="false" style='min-height:15em;' meh='{solution_encoded}'   
-onKeyPress='return handleCR(this ,event)' re='{regex_encoded}'>{self.student_code}</textarea>
-	</div>
+ re='{regex_encoded}' tol='{self.tolerance}'>{student_code}</textarea>
+	</div> <!-- onKeyPress='return handleCROLI(this, event)' -->
 	<div style='padding-top:10px'>
 			<input 
 			class='run_button' 
@@ -17,28 +19,35 @@ onKeyPress='return handleCR(this ,event)' re='{regex_encoded}'>{self.student_cod
 			<!-- onclick="var stupid=$(this).parent().parent().find('.student_code')[0].id; xblock_run(stupid);" -->
 	</div>
 	<!-- OUTPUT -->
-	<div id="{unique_id}-output" style='padding-top:20px' class="runout"></div>
-		<p>When the output is correct, click Submit to check it</p>
+	<div id="{unique_id}-output" style='padding-top:20px' class="runout">
+	<p>Click Run to run code, Submit to check it</p>
+	</div>
+		
 	</div>
 	<div class='unanswered' style='display:block'>
-		<img src='{unanswered_icon_url}'/>
+		<img src='{unanswered_icon_url}' alt='unanswered icon'/>
 	</div>
 	<div class='correct' style='display:none'>
-		<img src='{correct_icon_url}'/>
+		<img src='{correct_icon_url}' alt='correct icon'/>
+		<p style='color:green'>Correct</p>
 	</div>
 	<div class='incorrect' style='display:none'>
-		<img src='{incorrect_icon_url}'/>
-	</div>
-	<div class='correct_feedback' style='display:none'>
-		<p style='color:green'>Good job!</p>
+		<img src='{incorrect_icon_url}' alt='incorrect icon'/>
 	</div>
 	<div class='hint' style='display:none'></div>
 	<div class='button_holder' style='padding-top:10px'>
-		<div style='display:inline'>
+		<div style='display:inline; padding-right:15px;'>
 			<input 
 			class='submit_button' 
 			type='button' 
-			value='Submit'></input>
+			value='Submit'
+			stored_correctness='{stored_correctness}'></input>
+		</div>
+		<div style='display:inline'>
+			<input 
+			class='reset_button' 
+			type='button' 
+			value='Reset'></input>
 		</div>
 		<div class='hint_button_holder' style='{hint_button_css}'>
 			<input 
@@ -46,6 +55,7 @@ onKeyPress='return handleCR(this ,event)' re='{regex_encoded}'>{self.student_cod
 			type='button' 
 			value='Hint'></input>
 		</div>
+
 	</div>
 
 	<p style="clear: both;">&nbsp;</p> <!-- stop being floaty --> 
