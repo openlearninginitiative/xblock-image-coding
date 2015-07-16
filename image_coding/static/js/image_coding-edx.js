@@ -1631,5 +1631,5 @@ function refAvg(name) {
 
 // OLI - 'notready' return cases for grading, see 'OLI' above
 // OLI mod - TODO need a better way to manage this
-window.globalPathPrefix = "/c4x/meh/CS67/asset/";
+window.globalPathPrefix = "/c4x/OLI/CS101/asset/";
 
